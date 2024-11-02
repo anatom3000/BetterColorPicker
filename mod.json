@@ -1,0 +1,24 @@
+{   
+	"name": "Better Color Picker",
+	"description": "TODO",
+	"developer": "anatom3000",
+    "repository": "TODO",
+	"id": "anatom3000.bettercolorpicker",
+	"version": "v1.1.1",
+	"geode": "3.8.1",
+	"gd": {
+		"win": "2.206",
+		"android": "2.206",
+        "mac": "2.206"
+	},
+    "resources": {
+        "sprites": [
+            "resources/*.png"
+        ]
+    },
+    "tags": [
+        "editor",
+        "utility",
+        "offline"
+    ]
+}
