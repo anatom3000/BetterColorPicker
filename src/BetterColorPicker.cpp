@@ -1,14 +1,14 @@
 #include "BetterSatBriPicker.cpp"
 #include "BetterHuePicker.cpp"
 
-class BetterColorPicker : public CCControl {
+class OldBetterColorPicker : public CCControl {
 public:
     HSV m_hsv;
     BetterSatBriPicker* m_colourPicker;
     BetterHuePicker* m_huePicker;
     CCSprite* m_background;
 
-    ~BetterColorPicker() {
+    ~OldBetterColorPicker() {
         if (m_background) {
             m_background->removeFromParentAndCleanup(true);
         }
@@ -73,8 +73,8 @@ public:
         return true;
     }
 
-    static BetterColorPicker* create() {
-        BetterColorPicker *pRet = new BetterColorPicker();
+    static OldBetterColorPicker* create() {
+        OldBetterColorPicker *pRet = new OldBetterColorPicker();
         pRet->init();
         pRet->autorelease();
         return pRet;

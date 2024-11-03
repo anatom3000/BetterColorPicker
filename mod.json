@@ -5,15 +5,25 @@
     "repository": "TODO",
 	"id": "anatom3000.bettercolorpicker",
 	"version": "v1.1.1",
-	"geode": "3.8.1",
+	"geode": "3.9.0",
 	"gd": {
 		"win": "2.206",
 		"android": "2.206",
         "mac": "2.206"
 	},
+    "dependencies": [
+        {
+            "id": "geode.node-ids",
+            "version": ">=v1.15.0",
+            "importance": "required"
+        }
+    ],
     "resources": {
         "sprites": [
             "resources/*.png"
+        ],
+        "files": [
+            "resources/simple.fsh"
         ]
     },
     "tags": [

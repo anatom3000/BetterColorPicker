@@ -56,7 +56,7 @@ public:
         m_hue = m_huePercentage * 360.0f;
 
         // Clamp the position of the icon within the circle
-        CCRect backgroundBox = m_background->boundingBox();
+        CCRect backgroundBox = this->m_background->boundingBox();
 
         // Get the center point of the background image
         float centerX = m_startPos.x + backgroundBox.size.width * 0.5f;
