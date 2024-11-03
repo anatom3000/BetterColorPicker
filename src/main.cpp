@@ -14,7 +14,9 @@ public:
     float m_radius;
     CCPoint m_center;
     bool m_touchedHue;
-
+    
+    Ref<CCSprite> m_sprite;
+    Ref<CCGLProgram> m_shader;
     Ref<CCSprite> m_hueNipple;
     Ref<CCSprite> m_svNipple;
 
@@ -43,33 +45,37 @@ public:
         if (!CCControl::init()) return false;
         this->setTouchEnabled(true);
         this->registerWithTouchDispatcher();
-        cocos2d::CCTouchDispatcher::get()->registerForcePrio(this, 2);
 
-        auto sprite = CCSprite::create("picker.png"_spr);
-        sprite->setCascadeOpacityEnabled(true);
-        m_radius = 0.5 * sprite->getContentSize().width;
+        m_sprite = CCSprite::create("frame.png"_spr);
+        m_sprite->setCascadeOpacityEnabled(true);
+        m_radius = 0.5 * m_sprite->getContentSize().width;
 
         // TODO: AA
         // The Alias/Antialias property belongs to CCSpriteBatchNode, so you can’t individually set the aliased property.
-        CCGLProgram* shader = ShaderCache::get()->getProgram("colorPicker");
-        shader->setUniformsForBuiltins();
-        sprite->setShaderProgram(shader);
-        shader->use();
-        sprite->setBlendFunc({GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA});
-        this->addChild(sprite);
+        m_shader = ShaderCache::get()->getProgram("colorPicker");
+        m_shader->setUniformsForBuiltins();
+        m_sprite->setShaderProgram(m_shader);
+        m_shader->use();
+        m_sprite->setBlendFunc({GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA});
+        this->addChild(m_sprite);
 
-        this->m_hueNipple = CCSprite::create("colourPicker.png"_spr);
-        this->m_svNipple = CCSprite::create("colourPicker.png"_spr);
+        this->m_hueNipple = CCSprite::create("nipple.png"_spr);
+        this->m_svNipple = CCSprite::create("nipple.png"_spr);
         
         this->addChild(m_hueNipple);
         this->addChild(m_svNipple);
 
-        this->setContentSize(sprite->getContentSize());
+        this->setContentSize(m_sprite->getContentSize());
 
         this->updateHue(ccp(-1, 0));
-        this->updateSV(ccp(m_radius*v3.x, m_radius*v3.y));
+        this->updateSV(ccp(TRIANGLE_SIZE*m_radius*v2.x, TRIANGLE_SIZE*m_radius*v2.y));
 
         return true;
+    }
+
+    void updateShader() {
+        m_shader->setUniformLocationWith3f(m_shader->getUniformLocationForName("currentHsv"), m_hue, m_saturation, m_value);
+        m_shader->use();
     }
 
     bool touchesHueWheel(CCPoint position) {
@@ -80,6 +86,7 @@ public:
 
     std::tuple<double, double, double> barycentricCoords(CCPoint pos) {
         pos /= m_radius;
+        pos /= TRIANGLE_SIZE;
         
         double l1 = ((v2.y - v3.y)*(pos.x - v3.x) + (v3.x - v2.x)*(pos.y - v3.y))
             / ((v2.y - v3.y)*(v1.x - v3.x) + (v3.x - v2.x)*(v1.y - v3.y));
@@ -94,8 +101,8 @@ public:
 
     CCPoint cartesianCoords(double x, double y, double z) {
         return ccp(
-            m_radius * (x*v1.x + y*v2.x + z*v3.x),
-            m_radius * (x*v1.y + y*v2.y + z*v3.y)
+            TRIANGLE_SIZE * m_radius * (x*v1.x + y*v2.x + z*v3.x),
+            TRIANGLE_SIZE * m_radius * (x*v1.y + y*v2.y + z*v3.y)
         );
     }
 
@@ -110,11 +117,12 @@ public:
     void updateHue(CCPoint position) {
         double angle = atan2(position.y, position.x);
 
-        m_hue = angle / (2.0 * PI);
+        m_hue = fmod(0.5 + angle / (2.0 * PI), 1.0);
 
         double radius = m_radius * (1.0+TRIANGLE_SIZE) / 2.0;
 
         m_hueNipple->setPosition(ccp(radius*cos(angle), radius*sin(angle)));
+        this->updateShader();
     }
 
     void updateSV(CCPoint position) {
@@ -125,32 +133,32 @@ public:
         
         m_saturation = y;
         m_value = 1.0-x;
-
-        m_svNipple->setPosition(cartesianCoords(x, y, z));
+        
+        this->updateShader();
     }
 
     bool ccTouchBegan(CCTouch *touch, CCEvent *event) override {
         auto position = this->getTouchLocation(touch);
         
-        log::debug("ccTouchBegan: {}, {}", position.x, position.y);
-        m_hueNipple->setPosition(position);
+        if (this->touchesTriangle(position)) {
+            this->updateSV(position);
+            this->m_touchedHue = false;
+            return true;
+        }
+
 
         if (this->touchesHueWheel(position)) {
             this->updateHue(position);
             this->m_touchedHue = true;
             return true;
-        } else if (this->touchesTriangle(position)) {
-            this->updateSV(position);
-            this->m_touchedHue = false;
-            return true;
-        } else {
-            return false;
         }
+
+
+        return false;
     }
 
     void ccTouchMoved(CCTouch *touch, CCEvent *event) override {
         CCPoint position = this->getTouchLocation(touch);
-        log::debug("ccTouchMoved: {}, {}", position.x, position.y);
         
         if (this->m_touchedHue) {
             this->updateHue(position);
@@ -160,13 +168,13 @@ public:
     }
 
     void registerWithTouchDispatcher() override {
-        cocos2d::CCTouchDispatcher::get()->addTargetedDelegate(this, -500, true);
+        cocos2d::CCTouchDispatcher::get()->addTargetedDelegate(this, -510, true);
     }
 };
 
 CCPoint BetterColorPicker::v1 = ccp(0.0, 1.0);
 CCPoint BetterColorPicker::v2 = ccp(-sqrt(3.0)/2.0, -0.5);
-CCPoint BetterColorPicker::v3 = ccp(-sqrt(3.0)/2.0, +0.5);
+CCPoint BetterColorPicker::v3 = ccp(+sqrt(3.0)/2.0, -0.5);
 
 class $modify(MyColorSelectPopup, ColorSelectPopup) {
     struct Fields {
@@ -178,14 +186,6 @@ class $modify(MyColorSelectPopup, ColorSelectPopup) {
 
         // TODO: add node IDs for ColorSelectPopup
         m_colorPicker->setPosition(ccp(0, 1000));
-
-        auto btn = CCMenuItemSpriteExtra::create(
-            ButtonSprite::create("Click me!"),
-            this,
-            nullptr
-        );
-        btn->setPosition(200.f - m_buttonMenu->getPosition().x, 200.f - m_buttonMenu->getPosition().y);
-        m_buttonMenu->addChild(btn);
 
         m_fields->picker = BetterColorPicker::create();
         m_fields->picker->setPosition(ccp(284.f, 180.f) - m_buttonMenu->getPosition());
@@ -210,6 +210,7 @@ precision mediump float;
 
 varying vec2 v_texCoord;
 uniform sampler2D CC_Texture0;
+uniform vec3 currentHsv;
 
 // https://github.com/hughsk/glsl-hsv2rgb
 vec3 hsv2rgb(vec3 c) {
@@ -233,7 +234,6 @@ vec3 barycentricCoords(vec2 pos, vec2 v1, vec2 v2, vec2 v3) {
 void main() {
     vec2 uv = 2.0*v_texCoord - vec2(1.0, 1.0);
     float r = sqrt(uv.x*uv.x + uv.y*uv.y);
-    float someAngle = 0.7;
     float r3over2 = sqrt(3.0) * .5;
     float triangleSize = .85;
 
@@ -247,7 +247,7 @@ void main() {
         if (0.0 < bary.x && bary.x <= 1.0 
          && 0.0 < bary.y && bary.y <= 1.0 
          && 0.0 < bary.z && bary.z <= 1.0) {
-            vec3 col = hsv2rgb(vec3(someAngle, bary.y, 1.0-bary.x));
+            vec3 col = hsv2rgb(vec3(currentHsv.x, bary.y, 1.0-bary.x));
             gl_FragColor = vec4(col.x, col.y, col.z, 1.0);
         } else {
             gl_FragColor = vec4(0.0);
