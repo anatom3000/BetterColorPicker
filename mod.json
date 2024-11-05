@@ -20,10 +20,8 @@
     ],
     "resources": {
         "sprites": [
-            "resources/*.png"
-        ],
-        "files": [
-            "resources/simple.fsh"
+            "resources/frame.png",
+            "resources/nipple.png"
         ]
     },
     "tags": [

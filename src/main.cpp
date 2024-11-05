@@ -2,6 +2,7 @@
 using namespace geode::prelude;
 
 #include <Geode/modify/ColorSelectPopup.hpp>
+#include <Geode/modify/SetupPulsePopup.hpp>
 
 #include "CCSpriteBatchNode.h"
 #include "ShaderCache.h"
@@ -20,6 +21,7 @@ public:
     
     Ref<CCSprite> m_sprite;
     Ref<CCGLProgram> m_shader;
+    GLuint m_location;
     Ref<CCSprite> m_hueNipple;
     Ref<CCSprite> m_svNipple;
 
@@ -63,8 +65,11 @@ public:
         m_shader->setUniformsForBuiltins();
         m_sprite->setShaderProgram(m_shader);
         m_shader->use();
+        m_location = m_shader->getUniformLocationForName("currentHsv");
+
         m_sprite->setBlendFunc({GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA});
         this->addChild(m_sprite);
+
 
         this->m_hueNipple = CCSprite::create("nipple.png"_spr);
         this->m_svNipple = CCSprite::create("nipple.png"_spr);
@@ -80,8 +85,9 @@ public:
     }
 
     void updateValues() {
-        m_shader->setUniformLocationWith3f(m_shader->getUniformLocationForName("currentHsv"), m_hue, m_saturation, m_value);
+        //m_shader->setUniformLocationWith3f(m_location, m_hue, m_saturation, m_value);
         m_shader->use();
+        glUniform3f(m_location, m_hue, m_saturation, m_value);
 
         this->m_colorChangedCallback(this->getRgbValue());
     }
@@ -109,13 +115,20 @@ public:
 
         double radius = m_radius * (1.0+TRIANGLE_SIZE) / 2.0;
         double angle = (m_hue - 0.5) * 2 * PI;
-        double x = 1.0-m_value;
-        double y = m_saturation;
-        double z = 1.0-x-y;
+        double y = v1.y + m_value * (v2.y - v1.y);
+        double width = widthAt(y);
+        double x = width == 0 ? 0.0 : (m_saturation - 0.5) * width ;
 
         m_hueNipple->setPosition(ccp(radius*cos(angle), radius*sin(angle)));
-        m_svNipple->setPosition(this->cartesianCoords(x, y, z) * ccp(TRIANGLE_SIZE * m_radius, TRIANGLE_SIZE * m_radius));
+        m_svNipple->setPosition(ccp(m_radius * TRIANGLE_SIZE * x, m_radius * TRIANGLE_SIZE * y));
         this->updateValues();
+    }
+
+    double widthAt(double y) {
+        double a = (v2.x - v3.x) / (v2.y - v1.y);
+        double b = -a*v1.y;
+
+        return (a*y + b);
     }
 
     bool touchesHueWheel(CCPoint position) {
@@ -210,12 +223,14 @@ public:
 
     void updateSV(CCPoint position) {
         auto [bx, by, bz] = barycentricCoords(position);
-        auto [x, y, z] = closestPointInTriangle(bx, by, bz);
+        auto [cx, cy, cz] = closestPointInTriangle(bx, by, bz);
+        auto pos = cartesianCoords(cx, cy, cz);
 
-        m_saturation = y;
-        m_value = 1.0-x;
+        double width = widthAt(pos.y);
+        m_saturation = width == 0.0 ? 0.0 : 0.5 + pos.x/width;
+        m_value = (pos.y - v1.y) / (v2.y - v1.y);
         
-        m_svNipple->setPosition(this->cartesianCoords(x, y, z) * ccp(TRIANGLE_SIZE * m_radius, TRIANGLE_SIZE * m_radius));
+        m_svNipple->setPosition(pos * ccp(TRIANGLE_SIZE * m_radius, TRIANGLE_SIZE * m_radius));
         this->updateValues();
     }
 
@@ -273,7 +288,7 @@ class $modify(MyColorSelectPopup, ColorSelectPopup) {
         m_fields->picker = BetterColorPicker::create([this](ccColor3B color) {
             m_colorPicker->setColorValue(color);
         });
-        m_fields->picker->setPosition(ccp(284.f, 180.f) - m_buttonMenu->getPosition());
+        m_fields->picker->setPosition(ccp(284.f, 196.f) - m_buttonMenu->getPosition());
         m_fields->picker->setRgbValue(m_colorPicker->getColorValue());
 
         m_buttonMenu->addChild(m_fields->picker);
@@ -317,6 +332,15 @@ class $modify(MyColorSelectPopup, ColorSelectPopup) {
     }
 };
 
+class $modify(MySetupPulsePopup, SetupPulsePopup) {
+    struct Fields {
+        CCControlColourPicker* vanillaPicker;
+        BetterColorPicker* picker;
+    };
+
+    //TODO
+};
+
 $on_mod(Loaded) {
 	std::string frag = R"(
 #ifdef GL_ES
@@ -346,6 +370,13 @@ vec3 barycentricCoords(vec2 pos, vec2 v1, vec2 v2, vec2 v3) {
     return vec3(l1, l2, l3);
 }
 
+float widthAt(vec2 pos, vec2 v1, vec2 v2, vec2 v3) {
+    float a = (v2.x - v3.x) / (v2.y - v1.y);
+    float b = -a*v1.y;
+
+    return (a*pos.y + b);
+}
+
 void main() {
     vec2 uv = 2.0*v_texCoord - vec2(1.0, 1.0);
     float r = sqrt(uv.x*uv.x + uv.y*uv.y);
@@ -353,16 +384,21 @@ void main() {
     float triangleSize = .85;
 
     if (r < triangleSize) {
-        vec3 bary = barycentricCoords(
-            uv,
-            triangleSize * vec2(0.0, -1.0),
-            triangleSize * vec2(-r3over2, 0.5),
-            triangleSize * vec2(r3over2, 0.5)
-        );
+        vec2 v1 = triangleSize * vec2(0.0, -1.0);
+        vec2 v2 = triangleSize * vec2(-r3over2, 0.5);
+        vec2 v3 = triangleSize * vec2(r3over2, 0.5);
+
+        vec3 bary = barycentricCoords(uv, v1, v2, v3);
+
         if (0.0 < bary.x && bary.x <= 1.0 
          && 0.0 < bary.y && bary.y <= 1.0 
          && 0.0 < bary.z && bary.z <= 1.0) {
-            vec3 col = hsv2rgb(vec3(currentHsv.x, bary.y, 1.0-bary.x));
+            float h = currentHsv.x;
+            float width = widthAt(uv, v1, v2, v3);
+            float s = width == 0.0 ? 0.0 : 0.5 + uv.x/width;
+            float v = (uv.y - v1.y) / (v2.y - v1.y);
+
+            vec3 col = hsv2rgb(vec3(h, s, v));
             gl_FragColor = vec4(col.x, col.y, col.z, 1.0);
         } else {
             gl_FragColor = vec4(0.0);
