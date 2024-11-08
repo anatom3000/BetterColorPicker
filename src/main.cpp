@@ -336,9 +336,55 @@ class $modify(MySetupPulsePopup, SetupPulsePopup) {
     struct Fields {
         CCControlColourPicker* vanillaPicker;
         BetterColorPicker* picker;
+        bool hsvEnabled;
     };
 
-    //TODO
+	bool init(EffectGameObject* effect, cocos2d::CCArray* objects) {
+        if (!SetupPulsePopup::init(effect, objects)) return false;
+
+        log::info("good girl");
+        
+        m_fields->vanillaPicker = static_cast<CCControlColourPicker*>(
+            static_cast<CCNode*>(this->getChildren()->objectAtIndex(0))
+                ->getChildren()->objectAtIndex(28)
+        );
+
+
+        m_fields->vanillaPicker->setPosition(ccp(0, 10000));
+        m_fields->picker = BetterColorPicker::create([this](ccColor3B color) {
+            m_fields->vanillaPicker->setColorValue(color);
+        });
+
+        if (m_fields->hsvEnabled) {
+            m_fields->picker->setPosition(ccp(259.f, 10195.f) - m_buttonMenu->getPosition());
+        } else {
+            m_fields->picker->setPosition(ccp(259.f, 195.f) - m_buttonMenu->getPosition());
+        }
+
+        m_fields->picker->setRgbValue(m_fields->vanillaPicker->getColorValue());
+        m_fields->picker->setScale(0.8f);
+
+        m_buttonMenu->addChild(m_fields->picker);
+
+        return true;
+    }
+
+	void onSelectPulseMode(cocos2d::CCObject* sender) {
+        SetupPulsePopup::onSelectPulseMode(sender);
+
+        if (!sender) return;
+
+        m_fields->hsvEnabled = sender->getTag();
+
+        if (!m_fields->picker) return;
+
+        if (!sender || sender->getTag()) {
+            m_fields->picker->setPosition(ccp(259.f, 10195.f) - m_buttonMenu->getPosition());
+        } else {
+            m_fields->picker->setPosition(ccp(259.f, 195.f) - m_buttonMenu->getPosition());
+        }
+    }
+
 };
 
 $on_mod(Loaded) {
