@@ -275,6 +275,11 @@ CCPoint BetterColorPicker::v1 = ccp(0.0, 1.0);
 CCPoint BetterColorPicker::v2 = ccp(-sqrt(3.0)/2.0, -0.5);
 CCPoint BetterColorPicker::v3 = ccp(+sqrt(3.0)/2.0, -0.5);
 
+class WhyTheFuckIsGetColorValueInlinedOnAndroid: public CCControlColourPicker {
+public:
+    ccColor3B getTheFuckingColor() { return m_rgb; } 
+};
+
 class $modify(MyColorSelectPopup, ColorSelectPopup) {
     struct Fields {
         BetterColorPicker* picker;
@@ -289,23 +294,21 @@ class $modify(MyColorSelectPopup, ColorSelectPopup) {
             m_colorPicker->setColorValue(color);
         });
         m_fields->picker->setPosition(ccp(284.f, 196.f) - m_buttonMenu->getPosition());
-        m_fields->picker->setRgbValue(m_colorPicker->getColorValue());
+        m_fields->picker->setRgbValue(static_cast<WhyTheFuckIsGetColorValueInlinedOnAndroid*>(m_colorPicker)->getTheFuckingColor());
 
         m_buttonMenu->addChild(m_fields->picker);
 
         return true;
 	}
 
-    // ColorSelectPopup::getColorValue and ColorSelectPopup::selectColor are inlined on Windows :/
-
     void onDefault(CCObject* sender) {
         ColorSelectPopup::onDefault(sender);
-        m_fields->picker->setRgbValue(m_colorPicker->getColorValue());
+        m_fields->picker->setRgbValue(static_cast<WhyTheFuckIsGetColorValueInlinedOnAndroid*>(m_colorPicker)->getTheFuckingColor());
     }
 
     void onPaste(CCObject* sender) {
         ColorSelectPopup::onPaste(sender);
-        m_fields->picker->setRgbValue(m_colorPicker->getColorValue());
+        m_fields->picker->setRgbValue(static_cast<WhyTheFuckIsGetColorValueInlinedOnAndroid*>(m_colorPicker)->getTheFuckingColor());
     }
 
     void textChanged(CCTextInputNode* input) {
@@ -361,7 +364,7 @@ class $modify(MySetupPulsePopup, SetupPulsePopup) {
             m_fields->picker->setPosition(ccp(259.f, 195.f) - m_buttonMenu->getPosition());
         }
 
-        m_fields->picker->setRgbValue(m_fields->vanillaPicker->getColorValue());
+        m_fields->picker->setRgbValue(static_cast<WhyTheFuckIsGetColorValueInlinedOnAndroid*>(m_fields->vanillaPicker)->getTheFuckingColor());
         m_fields->picker->setScale(0.8f);
 
         m_buttonMenu->addChild(m_fields->picker);
