@@ -4,6 +4,7 @@ using namespace geode::prelude;
 #include <Geode/modify/ColorSelectPopup.hpp>
 #include <Geode/modify/SetupPulsePopup.hpp>
 
+
 #include "CCSpriteBatchNode.h"
 #include "ShaderCache.h"
 
@@ -59,8 +60,6 @@ public:
         m_sprite->setCascadeOpacityEnabled(true);
         m_radius = 0.5 * m_sprite->getContentSize().width;
 
-        // TODO: AA
-        // The Alias/Antialias property belongs to CCSpriteBatchNode, so you can’t individually set the aliased property.
         m_shader = ShaderCache::get()->getProgram("colorPicker");
         m_shader->setUniformsForBuiltins();
         m_sprite->setShaderProgram(m_shader);
@@ -283,6 +282,7 @@ public:
 class $modify(MyColorSelectPopup, ColorSelectPopup) {
     struct Fields {
         BetterColorPicker* picker;
+        bool isColorSelectPopup;
     };
 
 	bool init(EffectGameObject* effect, cocos2d::CCArray* array, ColorAction* action) {
@@ -296,6 +296,8 @@ class $modify(MyColorSelectPopup, ColorSelectPopup) {
         m_fields->picker->setPosition(ccp(284.f, 196.f) - m_buttonMenu->getPosition());
         m_fields->picker->setRgbValue(static_cast<WhyTheFuckIsGetColorValueInlinedOnAndroid*>(m_colorPicker)->getTheFuckingColor());
 
+        m_fields->isColorSelectPopup = true;
+
         m_buttonMenu->addChild(m_fields->picker);
 
         return true;
@@ -308,6 +310,8 @@ class $modify(MyColorSelectPopup, ColorSelectPopup) {
 
     void onPaste(CCObject* sender) {
         ColorSelectPopup::onPaste(sender);
+        if (!m_fields->isColorSelectPopup) return; // may be called from MySetupPulsePopup::onPaste
+
         m_fields->picker->setRgbValue(static_cast<WhyTheFuckIsGetColorValueInlinedOnAndroid*>(m_colorPicker)->getTheFuckingColor());
     }
 
@@ -337,21 +341,33 @@ class $modify(MyColorSelectPopup, ColorSelectPopup) {
 
 class $modify(MySetupPulsePopup, SetupPulsePopup) {
     struct Fields {
-        CCControlColourPicker* vanillaPicker;
         BetterColorPicker* picker;
+        CCControlColourPicker* vanillaPicker;
         bool hsvEnabled;
+        bool isSetupPulsePopup;
     };
 
 	bool init(EffectGameObject* effect, cocos2d::CCArray* objects) {
         if (!SetupPulsePopup::init(effect, objects)) return false;
 
-        log::info("good girl");
-        
         m_fields->vanillaPicker = static_cast<CCControlColourPicker*>(
             static_cast<CCNode*>(this->getChildren()->objectAtIndex(0))
                 ->getChildren()->objectAtIndex(28)
         );
 
+        m_fields->isSetupPulsePopup = true;
+
+        // 0/32/16
+        auto pasteButton = static_cast<CCMenuItemSpriteExtra*>(
+            static_cast<CCNode*>(
+            static_cast<CCNode*>(
+                this->getChildren()->objectAtIndex(0)
+            )->getChildren()->objectAtIndex(31)
+            )->getChildren()->objectAtIndex(15)
+        );
+        
+        //pasteButton->setVisible(false);
+        //pasteButton->setTarget(this, menu_selector(MySetupPulsePopup::onBetterPaste));
 
         m_fields->vanillaPicker->setPosition(ccp(0, 10000));
         m_fields->picker = BetterColorPicker::create([this](ccColor3B color) {
@@ -375,19 +391,28 @@ class $modify(MySetupPulsePopup, SetupPulsePopup) {
 	void onSelectPulseMode(cocos2d::CCObject* sender) {
         SetupPulsePopup::onSelectPulseMode(sender);
 
-        if (!sender) return;
+        if (!sender || !m_fields->picker) return;
 
         m_fields->hsvEnabled = sender->getTag();
-
-        if (!m_fields->picker) return;
-
-        if (!sender || sender->getTag()) {
+        if (m_fields->hsvEnabled) {
             m_fields->picker->setPosition(ccp(259.f, 10195.f) - m_buttonMenu->getPosition());
         } else {
             m_fields->picker->setPosition(ccp(259.f, 195.f) - m_buttonMenu->getPosition());
         }
     }
+    
+    void onBetterPaste(CCObject* sender) {
+        SetupPulsePopup::onPaste(sender);
+        m_fields->picker->setRgbValue(static_cast<WhyTheFuckIsGetColorValueInlinedOnAndroid*>(m_fields->vanillaPicker)->getTheFuckingColor());
+    }
 
+    // same address as ColorSelectPopup::onPaste
+    void onPaste(CCObject* sender) {
+        SetupPulsePopup::onPaste(sender);
+        if (!m_fields->isSetupPulsePopup) return; // may be called from MyColorSelectPopup::onPaste
+
+        m_fields->picker->setRgbValue(static_cast<WhyTheFuckIsGetColorValueInlinedOnAndroid*>(m_fields->vanillaPicker)->getTheFuckingColor());
+    }
 };
 
 $on_mod(Loaded) {
