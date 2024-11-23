@@ -36,12 +36,15 @@ class ShaderCache {
     void createShader(std::string name, std::string frag);
 
 
-    static ShaderCache* get(){
-
+    static ShaderCache* get() {
         if (!instance) {
             instance = new ShaderCache();
             instance->init();
-        };
+        }
         return instance;
+    }
+
+    void clearShaders(){
+        m_shaders->removeAllObjects();
     }
 };

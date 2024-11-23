@@ -3,6 +3,7 @@ using namespace geode::prelude;
 
 #include <Geode/modify/ColorSelectPopup.hpp>
 #include <Geode/modify/SetupPulsePopup.hpp>
+#include <Geode/modify/GameManager.hpp>
 
 
 #include "CCSpriteBatchNode.h"
@@ -415,7 +416,7 @@ class $modify(MySetupPulsePopup, SetupPulsePopup) {
     }
 };
 
-$on_mod(Loaded) {
+void loadPickerShader() {
 	std::string frag = R"(
 #ifdef GL_ES
 precision mediump float;
@@ -490,4 +491,15 @@ void main() {
 	)";
 
 	ShaderCache::get()->createShader("colorPicker", frag);
+}
+
+
+class $modify(MyGameManager, GameManager) {
+	void reloadAllStep5() {
+		GameManager::reloadAllStep5();
+		ShaderCache::get()->clearShaders();
+		loadPickerShader();
+	}
 };
+
+$on_mod(Loaded) { loadPickerShader(); };
