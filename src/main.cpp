@@ -10,7 +10,7 @@ using namespace geode::prelude;
 #include "ShaderCache.h"
 
 const double PI = 3.1415926535897932384626433;
-const double TRIANGLE_SIZE = .85;
+const double TRIANGLE_SIZE = .83;
 
 using ColorChangedCallback = std::function<void(ccColor3B)>;
 
@@ -58,6 +58,7 @@ public:
         m_colorChangedCallback = callback;
 
         m_sprite = CCSprite::create("frame.png"_spr);
+
         m_sprite->setCascadeOpacityEnabled(true);
         m_radius = 0.5 * m_sprite->getContentSize().width;
 
@@ -80,6 +81,7 @@ public:
         this->addChild(m_svNipple);
 
         this->setContentSize(m_sprite->getContentSize());
+        this->setAnchorPoint({ 0.f, 0.f });
 
         return true;
     }
@@ -235,6 +237,8 @@ public:
     }
 
     bool ccTouchBegan(CCTouch *touch, CCEvent *event) override {
+        if (!this->isVisible()) return false;
+        
         auto position = this->getTouchLocation(touch);
         
         if (this->touchesTriangle(position)) {
@@ -280,6 +284,17 @@ public:
     ccColor3B getTheFuckingColor() { return m_rgb; } 
 };
 
+// unused, left here to document what didn't work
+void disableTouch(CCControlColourPicker* target) {
+    return;
+
+    target->setTouchPriority(0);
+    target->setTouchEnabled(false);
+    cocos2d::CCTouchDispatcher::get()->removeDelegate(target);
+    cocos2d::CCTouchDispatcher::get()->addTargetedDelegate(target, 0, false);
+    cocos2d::CCTouchDispatcher::get()->unregisterForcePrio(target);
+}
+
 class $modify(MyColorSelectPopup, ColorSelectPopup) {
     struct Fields {
         BetterColorPicker* picker;
@@ -289,17 +304,22 @@ class $modify(MyColorSelectPopup, ColorSelectPopup) {
 	bool init(EffectGameObject* effect, cocos2d::CCArray* array, ColorAction* action) {
         if (!ColorSelectPopup::init(effect, array, action)) return false;
 
-        m_colorPicker->setPosition(ccp(0, 10000));
+        auto winSize = CCDirector::sharedDirector()->getWinSize();
+        auto center = winSize / 2.0f;
+
+        // i could not find a way to prevent the vanilla picker to pick up touch events
+        m_colorPicker->setPosition(ccp(100000, 0));
 
         m_fields->picker = BetterColorPicker::create([this](ccColor3B color) {
             m_colorPicker->setColorValue(color);
         });
-        m_fields->picker->setPosition(ccp(284.f, 196.f) - m_buttonMenu->getPosition());
+        m_fields->picker->setPosition(center + ccp(0.f, 36.f));
         m_fields->picker->setRgbValue(static_cast<WhyTheFuckIsGetColorValueInlinedOnAndroid*>(m_colorPicker)->getTheFuckingColor());
 
         m_fields->isColorSelectPopup = true;
 
-        m_buttonMenu->addChild(m_fields->picker);
+        this->addChild(m_fields->picker);
+        //m_buttonMenu->addChild(m_fields->picker);
 
         return true;
 	}
@@ -331,12 +351,7 @@ class $modify(MyColorSelectPopup, ColorSelectPopup) {
 
     void onToggleHSVMode(CCObject* sender) {
         ColorSelectPopup::onToggleHSVMode(sender);
-
-        if (!static_cast<CCMenuItemToggler*>(sender)->isOn()) {
-            m_fields->picker->setPosition(ccp(284.f, 10196.f) - m_buttonMenu->getPosition());
-        } else {
-            m_fields->picker->setPosition(ccp(284.f, 196.f) - m_buttonMenu->getPosition());
-        }
+        m_fields->picker->setVisible(static_cast<CCMenuItemToggler*>(sender)->isOn());
     }
 };
 
@@ -350,6 +365,9 @@ class $modify(MySetupPulsePopup, SetupPulsePopup) {
 
 	bool init(EffectGameObject* effect, cocos2d::CCArray* objects) {
         if (!SetupPulsePopup::init(effect, objects)) return false;
+
+        auto winSize = CCDirector::sharedDirector()->getWinSize();
+        auto center = winSize / 2.0f;
 
         m_fields->vanillaPicker = static_cast<CCControlColourPicker*>(
             static_cast<CCNode*>(this->getChildren()->objectAtIndex(0))
@@ -367,24 +385,20 @@ class $modify(MySetupPulsePopup, SetupPulsePopup) {
             )->getChildren()->objectAtIndex(15)
         );
         
-        //pasteButton->setVisible(false);
-        //pasteButton->setTarget(this, menu_selector(MySetupPulsePopup::onBetterPaste));
+        // i could not find a way to prevent the vanilla picker to pick up touch events
+        m_fields->vanillaPicker->setPosition(ccp(100000, 0));
 
-        m_fields->vanillaPicker->setPosition(ccp(0, 10000));
         m_fields->picker = BetterColorPicker::create([this](ccColor3B color) {
             m_fields->vanillaPicker->setColorValue(color);
         });
 
-        if (m_fields->hsvEnabled) {
-            m_fields->picker->setPosition(ccp(259.f, 10195.f) - m_buttonMenu->getPosition());
-        } else {
-            m_fields->picker->setPosition(ccp(259.f, 195.f) - m_buttonMenu->getPosition());
-        }
+        m_fields->picker->setPosition(center + ccp(-8.f, 52.f));
+        m_fields->picker->setVisible(!m_fields->hsvEnabled);
 
         m_fields->picker->setRgbValue(static_cast<WhyTheFuckIsGetColorValueInlinedOnAndroid*>(m_fields->vanillaPicker)->getTheFuckingColor());
         m_fields->picker->setScale(0.8f);
 
-        m_buttonMenu->addChild(m_fields->picker);
+        this->addChild(m_fields->picker);
 
         return true;
     }
@@ -395,18 +409,9 @@ class $modify(MySetupPulsePopup, SetupPulsePopup) {
         if (!sender || !m_fields->picker) return;
 
         m_fields->hsvEnabled = sender->getTag();
-        if (m_fields->hsvEnabled) {
-            m_fields->picker->setPosition(ccp(259.f, 10195.f) - m_buttonMenu->getPosition());
-        } else {
-            m_fields->picker->setPosition(ccp(259.f, 195.f) - m_buttonMenu->getPosition());
-        }
+        m_fields->picker->setVisible(!m_fields->hsvEnabled);
     }
     
-    void onBetterPaste(CCObject* sender) {
-        SetupPulsePopup::onPaste(sender);
-        m_fields->picker->setRgbValue(static_cast<WhyTheFuckIsGetColorValueInlinedOnAndroid*>(m_fields->vanillaPicker)->getTheFuckingColor());
-    }
-
     // same address as ColorSelectPopup::onPaste
     void onPaste(CCObject* sender) {
         SetupPulsePopup::onPaste(sender);
@@ -456,7 +461,7 @@ void main() {
     vec2 uv = 2.0*v_texCoord - vec2(1.0, 1.0);
     float r = sqrt(uv.x*uv.x + uv.y*uv.y);
     float r3over2 = sqrt(3.0) * .5;
-    float triangleSize = .85;
+    float triangleSize = .83;
 
     if (r < triangleSize) {
         vec2 v1 = triangleSize * vec2(0.0, -1.0);
