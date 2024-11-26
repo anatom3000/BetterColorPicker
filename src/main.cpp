@@ -315,7 +315,8 @@ class $modify(MyColorSelectPopup, ColorSelectPopup) {
         });
         m_fields->picker->setPosition(center + ccp(0.f, 36.f));
         m_fields->picker->setRgbValue(static_cast<WhyTheFuckIsGetColorValueInlinedOnAndroid*>(m_colorPicker)->getTheFuckingColor());
-
+        m_fields->picker->setVisible(m_colorPicker->isVisible());
+		
         m_fields->isColorSelectPopup = true;
 
         this->addChild(m_fields->picker);
@@ -393,7 +394,7 @@ class $modify(MySetupPulsePopup, SetupPulsePopup) {
         });
 
         m_fields->picker->setPosition(center + ccp(-8.f, 52.f));
-        m_fields->picker->setVisible(!m_fields->hsvEnabled);
+	m_fields->picker->setVisible(m_fields->vanillaPicker->isVisible());
 
         m_fields->picker->setRgbValue(static_cast<WhyTheFuckIsGetColorValueInlinedOnAndroid*>(m_fields->vanillaPicker)->getTheFuckingColor());
         m_fields->picker->setScale(0.8f);
