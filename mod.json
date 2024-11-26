@@ -4,7 +4,7 @@
 	"developer": "anatom3000",
     "repository": "https://github.com/anatom3000/BetterColorPicker",
 	"id": "anatom3000.bettercolorpicker",
-	"version": "v1.0.1",
+	"version": "v1.0.2",
 	"geode": "4.0.1",
 	"gd": {
 		"win": "2.2074",
