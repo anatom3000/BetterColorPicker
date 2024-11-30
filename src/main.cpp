@@ -86,12 +86,12 @@ public:
         return true;
     }
 
-    void updateValues() {
+    void updateValues(bool call) {
         //m_shader->setUniformLocationWith3f(m_location, m_hue, m_saturation, m_value);
         m_shader->use();
         glUniform3f(m_location, m_hue, m_saturation, m_value);
 
-        this->m_colorChangedCallback(this->getRgbValue());
+        if (call) this->m_colorChangedCallback(this->getRgbValue());
     }
 
     ccColor3B getRgbValue() {
@@ -104,7 +104,7 @@ public:
         );
     }
 
-    void setRgbValue(ccColor3B color) {
+    void setRgbValue(ccColor3B color, bool call) {
         auto hsv = CCControlUtils::HSVfromRGB({
             .r = color.r / 255.0f,
             .g = color.g / 255.0f,
@@ -123,7 +123,7 @@ public:
 
         m_hueNipple->setPosition(ccp(radius*cos(angle), radius*sin(angle)));
         m_svNipple->setPosition(ccp(m_radius * TRIANGLE_SIZE * x, m_radius * TRIANGLE_SIZE * y));
-        this->updateValues();
+        this->updateValues(call);
     }
 
     double widthAt(double y) {
@@ -220,7 +220,7 @@ public:
         double radius = m_radius * (1.0+TRIANGLE_SIZE) / 2.0;
 
         m_hueNipple->setPosition(ccp(radius*cos(angle), radius*sin(angle)));
-        this->updateValues();
+        this->updateValues(true);
     }
 
     void updateSV(CCPoint position) {
@@ -233,7 +233,7 @@ public:
         m_value = (pos.y - v1.y) / (v2.y - v1.y);
         
         m_svNipple->setPosition(pos * ccp(TRIANGLE_SIZE * m_radius, TRIANGLE_SIZE * m_radius));
-        this->updateValues();
+        this->updateValues(true);
     }
 
     bool ccTouchBegan(CCTouch *touch, CCEvent *event) override {
@@ -242,14 +242,14 @@ public:
         auto position = this->getTouchLocation(touch);
         
         if (this->touchesTriangle(position)) {
-            this->updateSV(position);
             this->m_touching = true;
             this->m_touchedHue = false;
+            this->updateSV(position);
             return true;
         } else if (this->touchesHueWheel(position)) {
-            this->updateHue(position);
             this->m_touching = true;
             this->m_touchedHue = true;
+            this->updateHue(position);
             return true;
         }
 
@@ -314,7 +314,7 @@ class $modify(MyColorSelectPopup, ColorSelectPopup) {
             m_colorPicker->setColorValue(color);
         });
         m_fields->picker->setPosition(center + ccp(0.f, 36.f));
-        m_fields->picker->setRgbValue(static_cast<WhyTheFuckIsGetColorValueInlinedOnAndroid*>(m_colorPicker)->getTheFuckingColor());
+        m_fields->picker->setRgbValue(static_cast<WhyTheFuckIsGetColorValueInlinedOnAndroid*>(m_colorPicker)->getTheFuckingColor(), false);
         m_fields->picker->setVisible(m_colorPicker->isVisible());
 		
         m_fields->isColorSelectPopup = true;
@@ -327,27 +327,23 @@ class $modify(MyColorSelectPopup, ColorSelectPopup) {
 
     void onDefault(CCObject* sender) {
         ColorSelectPopup::onDefault(sender);
-        m_fields->picker->setRgbValue(static_cast<WhyTheFuckIsGetColorValueInlinedOnAndroid*>(m_colorPicker)->getTheFuckingColor());
+        m_fields->picker->setRgbValue(static_cast<WhyTheFuckIsGetColorValueInlinedOnAndroid*>(m_colorPicker)->getTheFuckingColor(), false);
     }
 
     void onPaste(CCObject* sender) {
         ColorSelectPopup::onPaste(sender);
         if (!m_fields->isColorSelectPopup) return; // may be called from MySetupPulsePopup::onPaste
 
-        m_fields->picker->setRgbValue(static_cast<WhyTheFuckIsGetColorValueInlinedOnAndroid*>(m_colorPicker)->getTheFuckingColor());
+        m_fields->picker->setRgbValue(static_cast<WhyTheFuckIsGetColorValueInlinedOnAndroid*>(m_colorPicker)->getTheFuckingColor(), false);
     }
 
     void textChanged(CCTextInputNode* input) {
         ColorSelectPopup::textChanged(input);
-        return;
-        
-        if (!m_fields->picker || m_fields->picker->m_touching) return;
 
-        std::string hex = input->getString();
-        
-        if (hex.size() == 6) {
-            m_fields->picker->setRgbValue(ColorSelectPopup::hexToColor(hex));
-        }
+        if (!m_fields->picker || m_fields->picker->m_touching) return;
+        if (input->getTag() != 11) return;
+
+        m_fields->picker->setRgbValue(static_cast<WhyTheFuckIsGetColorValueInlinedOnAndroid*>(m_colorPicker)->getTheFuckingColor(), false);
     }
 
     void onToggleHSVMode(CCObject* sender) {
@@ -396,7 +392,7 @@ class $modify(MySetupPulsePopup, SetupPulsePopup) {
         m_fields->picker->setPosition(center + ccp(-8.f, 52.f));
 	m_fields->picker->setVisible(m_fields->vanillaPicker->isVisible());
 
-        m_fields->picker->setRgbValue(static_cast<WhyTheFuckIsGetColorValueInlinedOnAndroid*>(m_fields->vanillaPicker)->getTheFuckingColor());
+        m_fields->picker->setRgbValue(static_cast<WhyTheFuckIsGetColorValueInlinedOnAndroid*>(m_fields->vanillaPicker)->getTheFuckingColor(), false);
         m_fields->picker->setScale(0.8f);
 
         this->addChild(m_fields->picker);
@@ -418,7 +414,16 @@ class $modify(MySetupPulsePopup, SetupPulsePopup) {
         SetupPulsePopup::onPaste(sender);
         if (!m_fields->isSetupPulsePopup) return; // may be called from MyColorSelectPopup::onPaste
 
-        m_fields->picker->setRgbValue(static_cast<WhyTheFuckIsGetColorValueInlinedOnAndroid*>(m_fields->vanillaPicker)->getTheFuckingColor());
+        m_fields->picker->setRgbValue(static_cast<WhyTheFuckIsGetColorValueInlinedOnAndroid*>(m_fields->vanillaPicker)->getTheFuckingColor(), false);
+    }
+
+    void textChanged(CCTextInputNode* input) {
+        SetupPulsePopup::textChanged(input);
+
+        if (!m_fields->picker || m_fields->picker->m_touching) return;
+        if (input->getTag() != 14) return;
+
+        m_fields->picker->setRgbValue(static_cast<WhyTheFuckIsGetColorValueInlinedOnAndroid*>(m_fields->vanillaPicker)->getTheFuckingColor(), false);
     }
 };
 
