@@ -319,10 +319,10 @@ class $modify(MyColorSelectPopup, ColorSelectPopup) {
         m_fields->isColorSelectPopup = true;
 
         this->addChild(m_fields->picker);
+        this->updatePickerPositions();
 
         m_fields->pickerToggle = CCMenuItemToggler::createWithStandardSprites(this, menu_selector(MyColorSelectPopup::onPickerToggle), .7);
         m_fields->pickerToggle->setPosition(110, 144);
-        this->updatePickerPositions();
 
         m_fields->pickerToggleLabel = CCLabelBMFont::create("Better Picker", "bigFont.fnt");
         m_fields->pickerToggleLabel->setScale(0.35);
@@ -359,10 +359,10 @@ class $modify(MyColorSelectPopup, ColorSelectPopup) {
         if (enable) {
             // i could not find a way to prevent the vanilla picker to pick up touch events
             m_colorPicker->setPosition(ccp(100000, 0));
-            m_fields->picker->setPosition(center + ccp(0.f, 36.f));
+            m_fields->picker->setPosition(center + ccp(0, 36));
         } else {
             m_fields->picker->setPosition(ccp(100000, 0));
-            m_colorPicker->setPosition(center + ccp(0.f, 36.f));
+            m_colorPicker->setPosition(center + ccp(0, 36));
         }
     }
 
@@ -404,6 +404,10 @@ class $modify(MySetupPulsePopup, SetupPulsePopup) {
     struct Fields {
         BetterColorPicker* picker;
         CCControlColourPicker* vanillaPicker;
+
+        CCMenuItemToggler* pickerToggle;
+        CCLabelBMFont* pickerToggleLabel;
+
         bool hsvEnabled;
         bool isSetupPulsePopup;
     };
@@ -430,22 +434,43 @@ class $modify(MySetupPulsePopup, SetupPulsePopup) {
             )->getChildren()->objectAtIndex(15)
         );
         
-        // i could not find a way to prevent the vanilla picker to pick up touch events
-        m_fields->vanillaPicker->setPosition(ccp(100000, 0));
-
         m_fields->picker = BetterColorPicker::create([this](ccColor3B color) {
             m_fields->vanillaPicker->setColorValue(color);
         });
-
-        m_fields->picker->setPosition(center + ccp(-8.f, 52.f));
-	m_fields->picker->setVisible(m_fields->vanillaPicker->isVisible());
 
         m_fields->picker->setRgbValue(static_cast<WhyTheFuckIsGetColorValueInlinedOnAndroid*>(m_fields->vanillaPicker)->getTheFuckingColor(), false);
         m_fields->picker->setScale(0.8f);
 
         this->addChild(m_fields->picker);
+        this->updatePickerPositions();
+
+        m_fields->pickerToggle = CCMenuItemToggler::createWithStandardSprites(this, menu_selector(MySetupPulsePopup::onPickerToggle), .7);
+        m_fields->pickerToggle->setPosition(95, 171);
+
+        m_fields->pickerToggleLabel = CCLabelBMFont::create("Better Picker", "bigFont.fnt");
+        m_fields->pickerToggleLabel->setScale(0.35);
+        m_fields->pickerToggleLabel->setAnchorPoint(ccp(0.0, 0.5));
+        m_fields->pickerToggleLabel->setPosition(115.25, 171);
+
+        bool on = m_fields->vanillaPicker->isVisible();
+
+        m_buttonMenu->addChild(m_fields->pickerToggle);
+        m_buttonMenu->addChild(m_fields->pickerToggleLabel);
+
+        m_fields->pickerToggle->toggle(Mod::get()->getSettingValue<bool>("enable-picker"));
+
+        m_fields->picker->setVisible(on);
+        m_fields->pickerToggle->setVisible(on);
+        m_fields->pickerToggle->setEnabled(on);
+        m_fields->pickerToggleLabel->setVisible(on);
 
         return true;
+    }
+
+    void onPickerToggle(CCObject* target) {
+        auto toggler = static_cast<CCMenuItemToggler*>(target);
+        Mod::get()->setSettingValue<bool>("enable-picker", !toggler->isToggled());
+        this->updatePickerPositions();
     }
 
 	void onSelectPulseMode(cocos2d::CCObject* sender) {
@@ -455,6 +480,25 @@ class $modify(MySetupPulsePopup, SetupPulsePopup) {
 
         m_fields->hsvEnabled = sender->getTag();
         m_fields->picker->setVisible(!m_fields->hsvEnabled);
+        m_fields->pickerToggle->setVisible(!m_fields->hsvEnabled);
+        m_fields->pickerToggle->setEnabled(!m_fields->hsvEnabled);
+        m_fields->pickerToggleLabel->setVisible(!m_fields->hsvEnabled);
+    }
+
+    void updatePickerPositions() {
+        bool enable = Mod::get()->getSettingValue<bool>("enable-picker");
+
+        auto winSize = CCDirector::sharedDirector()->getWinSize();
+        auto center = winSize / 2.0f;
+        
+        if (enable) {
+            // i could not find a way to prevent the vanilla picker to pick up touch events
+            m_fields->vanillaPicker->setPosition(ccp(100000, 0));
+            m_fields->picker->setPosition(center + ccp(-8, 52));
+        } else {
+            m_fields->picker->setPosition(ccp(100000, 0));
+            m_fields->vanillaPicker->setPosition(center + ccp(-25, 35));
+        }
     }
     
     // same address as ColorSelectPopup::onPaste
