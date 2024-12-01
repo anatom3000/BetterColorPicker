@@ -7,7 +7,8 @@ using namespace geode::prelude;
 #include "ShaderCache.h"
 
 const double PI = 3.1415926535897932384626433;
-const double TRIANGLE_SIZE = .83;
+const double TRIANGLE_SIZE = .80;
+const double OUTLINE_WIDTH = .04;
 
 using ColorChangedCallback = std::function<void(ccColor3B)>;
 
@@ -112,7 +113,7 @@ public:
         m_saturation = hsv.s;
         m_value = hsv.v;
 
-        double radius = m_radius * (1.0+TRIANGLE_SIZE) / 2.0;
+        double radius = m_radius * (1.0-OUTLINE_WIDTH+TRIANGLE_SIZE) / 2.0;
         double angle = (m_hue - 0.5) * 2 * PI;
         double y = v1.y + m_value * (v2.y - v1.y);
         double width = widthAt(y);
@@ -214,7 +215,7 @@ public:
 
         m_hue = fmod(0.5 + angle / (2.0 * PI), 1.0);
 
-        double radius = m_radius * (1.0+TRIANGLE_SIZE) / 2.0;
+        double radius = m_radius * (1.0-OUTLINE_WIDTH+TRIANGLE_SIZE) / 2.0;
 
         m_hueNipple->setPosition(ccp(radius*cos(angle), radius*sin(angle)));
         this->updateValues(true);
@@ -305,6 +306,9 @@ varying vec2 v_texCoord;
 uniform sampler2D CC_Texture0;
 uniform vec3 currentHsv;
 
+#define tint 0.95
+#define outlineColor vec4(tint, tint, tint, 1.0)
+
 // https://github.com/hughsk/glsl-hsv2rgb
 vec3 hsv2rgb(vec3 c) {
     vec4 K = vec4(1.0, 2.0 / 3.0, 1.0 / 3.0, 3.0);
@@ -335,7 +339,8 @@ void main() {
     vec2 uv = 2.0*v_texCoord - vec2(1.0, 1.0);
     float r = sqrt(uv.x*uv.x + uv.y*uv.y);
     float r3over2 = sqrt(3.0) * .5;
-    float triangleSize = .83;
+    float triangleSize = 0.80;
+    float outlineWidth = 0.04;
 
     if (r < triangleSize) {
         vec2 v1 = triangleSize * vec2(0.0, -1.0);
@@ -355,13 +360,29 @@ void main() {
             vec3 col = hsv2rgb(vec3(h, s, v));
             gl_FragColor = vec4(col.x, col.y, col.z, 1.0);
         } else {
-            gl_FragColor = vec4(0.0);
-        }
+            float outerTriangleSize = triangleSize + 2.0 * outlineWidth;
+            vec2 v1 = outerTriangleSize * vec2(0.0, -1.0);
+            vec2 v2 = outerTriangleSize * vec2(-r3over2, 0.5);
+            vec2 v3 = outerTriangleSize * vec2(r3over2, 0.5);
 
-    } else if (r < 1.0) {
+            vec3 bary = barycentricCoords(uv, v1, v2, v3);
+
+            if (0.0 < bary.x && bary.x <= 1.0 
+             && 0.0 < bary.y && bary.y <= 1.0 
+             && 0.0 < bary.z && bary.z <= 1.0) {
+                gl_FragColor = outlineColor;
+            } else if (r > triangleSize - outlineWidth) {
+                gl_FragColor = outlineColor;
+            } else {
+                gl_FragColor = vec4(0.0);
+            }
+        }
+    } else if (r < 1.0 - outlineWidth) {
         float angle = -0.5 - atan(uv.y, uv.x) / 2.0 / 3.141592;
         vec3 col = hsv2rgb(vec3(angle, 1.0, 1.0));
         gl_FragColor = vec4(col.x, col.y, col.z, 1.0);
+    } else if (r < 1.0) {
+        gl_FragColor = outlineColor;
     } else {
         gl_FragColor = vec4(0.0);
     }

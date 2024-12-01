@@ -9,7 +9,6 @@ class $modify(MySetupPulsePopup, SetupPulsePopup) {
         CCLabelBMFont* pickerToggleLabel;
 
         bool hsvEnabled;
-        bool isSetupPulsePopup;
     };
 
 	bool init(EffectGameObject* effect, cocos2d::CCArray* objects) {
@@ -23,16 +22,6 @@ class $modify(MySetupPulsePopup, SetupPulsePopup) {
                 ->getChildren()->objectAtIndex(28)
         );
 
-        m_fields->isSetupPulsePopup = true;
-
-        // 0/32/16
-        auto pasteButton = static_cast<CCMenuItemSpriteExtra*>(
-            static_cast<CCNode*>(
-            static_cast<CCNode*>(
-                this->getChildren()->objectAtIndex(0)
-            )->getChildren()->objectAtIndex(31)
-            )->getChildren()->objectAtIndex(15)
-        );
         
         m_fields->picker = BetterColorPicker::create([this](ccColor3B color) {
             m_fields->vanillaPicker->setColorValue(color);
@@ -63,6 +52,16 @@ class $modify(MySetupPulsePopup, SetupPulsePopup) {
         m_fields->pickerToggle->setVisible(on);
         m_fields->pickerToggle->setEnabled(on);
         m_fields->pickerToggleLabel->setVisible(on);
+
+        auto pasteButton = static_cast<CCMenuItemSpriteExtra*>(
+            static_cast<CCNode*>(
+            static_cast<CCNode*>(
+                this->getChildren()->objectAtIndex(0)
+            )->getChildren()->objectAtIndex(1)
+            )->getChildren()->objectAtIndex(16)
+        );
+        
+        pasteButton->setTarget(this, menu_selector(MySetupPulsePopup::onBetterPaste));
 
         return true;
     }
@@ -101,10 +100,8 @@ class $modify(MySetupPulsePopup, SetupPulsePopup) {
         }
     }
     
-    // same address as ColorSelectPopup::onPaste
-    void onPaste(CCObject* sender) {
+    void onBetterPaste(CCObject* sender) {
         SetupPulsePopup::onPaste(sender);
-        if (!m_fields->isSetupPulsePopup) return; // may be called from MyColorSelectPopup::onPaste
 
         m_fields->picker->setRgbValue(static_cast<WhyTheFuckIsGetColorValueInlinedOnAndroid*>(m_fields->vanillaPicker)->getTheFuckingColor(), false);
     }

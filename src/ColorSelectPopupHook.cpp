@@ -6,8 +6,6 @@ class $modify(MyColorSelectPopup, ColorSelectPopup) {
 
         CCMenuItemToggler* pickerToggle;
         CCLabelBMFont* pickerToggleLabel;
-
-        bool isColorSelectPopup;
     };
 
 	bool init(EffectGameObject* effect, cocos2d::CCArray* array, ColorAction* action) {
@@ -20,8 +18,6 @@ class $modify(MyColorSelectPopup, ColorSelectPopup) {
             m_colorPicker->setColorValue(color);
         });
         m_fields->picker->setRgbValue(static_cast<WhyTheFuckIsGetColorValueInlinedOnAndroid*>(m_colorPicker)->getTheFuckingColor(), false);
-
-        m_fields->isColorSelectPopup = true;
 
         this->addChild(m_fields->picker);
         this->updatePickerPositions();
@@ -45,6 +41,26 @@ class $modify(MyColorSelectPopup, ColorSelectPopup) {
         m_fields->pickerToggle->setVisible(on);
         m_fields->pickerToggle->setEnabled(on);
         m_fields->pickerToggleLabel->setVisible(on);
+
+        auto pasteButton = static_cast<CCMenuItemSpriteExtra*>(
+            static_cast<CCNode*>(
+            static_cast<CCNode*>(
+                this->getChildren()->objectAtIndex(0)
+            )->getChildren()->objectAtIndex(1) // 20-21
+            )->getChildren()->objectAtIndex(2)
+        );
+
+        pasteButton->setTarget(this, menu_selector(MyColorSelectPopup::onBetterPaste));
+
+        auto defaultButton = static_cast<CCMenuItemSpriteExtra*>(
+            static_cast<CCNode*>(
+            static_cast<CCNode*>(
+                this->getChildren()->objectAtIndex(0)
+            )->getChildren()->objectAtIndex(1)
+            )->getChildren()->objectAtIndex(3)
+        );
+
+        defaultButton->setTarget(this, menu_selector(MyColorSelectPopup::onBetterDefault));
 
         return true;
 	}
@@ -71,15 +87,13 @@ class $modify(MyColorSelectPopup, ColorSelectPopup) {
         }
     }
 
-    void onDefault(CCObject* sender) {
+    void onBetterDefault(CCObject* sender) {
         ColorSelectPopup::onDefault(sender);
         m_fields->picker->setRgbValue(static_cast<WhyTheFuckIsGetColorValueInlinedOnAndroid*>(m_colorPicker)->getTheFuckingColor(), false);
     }
 
-    void onPaste(CCObject* sender) {
+    void onBetterPaste(CCObject* sender) {
         ColorSelectPopup::onPaste(sender);
-        if (!m_fields->isColorSelectPopup) return; // may be called from MySetupPulsePopup::onPaste
-
         m_fields->picker->setRgbValue(static_cast<WhyTheFuckIsGetColorValueInlinedOnAndroid*>(m_colorPicker)->getTheFuckingColor(), false);
     }
 
