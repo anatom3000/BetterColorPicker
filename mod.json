@@ -23,6 +23,14 @@
             "resources/nipple.png"
         ]
     },
+    "settings": {
+        "enable-picker": {
+            "type": "bool",
+            "name": "Enable Better Color Picker",
+            "description": "Toggle off to bring back the vanilla color picker.\nCan also be toggled in the color/pulse popup.",
+            "default": true
+        }
+    },
     "tags": [
         "editor",
         "enhancement",

@@ -298,6 +298,10 @@ void disableTouch(CCControlColourPicker* target) {
 class $modify(MyColorSelectPopup, ColorSelectPopup) {
     struct Fields {
         BetterColorPicker* picker;
+
+        CCMenuItemToggler* pickerToggle;
+        CCLabelBMFont* pickerToggleLabel;
+
         bool isColorSelectPopup;
     };
 
@@ -307,23 +311,60 @@ class $modify(MyColorSelectPopup, ColorSelectPopup) {
         auto winSize = CCDirector::sharedDirector()->getWinSize();
         auto center = winSize / 2.0f;
 
-        // i could not find a way to prevent the vanilla picker to pick up touch events
-        m_colorPicker->setPosition(ccp(100000, 0));
-
         m_fields->picker = BetterColorPicker::create([this](ccColor3B color) {
             m_colorPicker->setColorValue(color);
         });
-        m_fields->picker->setPosition(center + ccp(0.f, 36.f));
         m_fields->picker->setRgbValue(static_cast<WhyTheFuckIsGetColorValueInlinedOnAndroid*>(m_colorPicker)->getTheFuckingColor(), false);
-        m_fields->picker->setVisible(m_colorPicker->isVisible());
-		
+
         m_fields->isColorSelectPopup = true;
 
         this->addChild(m_fields->picker);
-        //m_buttonMenu->addChild(m_fields->picker);
+
+        m_fields->pickerToggle = CCMenuItemToggler::createWithStandardSprites(this, menu_selector(MyColorSelectPopup::onPickerToggle), .7);
+        m_fields->pickerToggle->setPosition(110, 144);
+        this->updatePickerPositions();
+
+        m_fields->pickerToggleLabel = CCLabelBMFont::create("Better Picker", "bigFont.fnt");
+        m_fields->pickerToggleLabel->setScale(0.35);
+        m_fields->pickerToggleLabel->setAnchorPoint(ccp(0.0, 0.5));
+        m_fields->pickerToggleLabel->setPosition(130.25, 144);
+
+        bool on = m_colorPicker->isVisible();
+
+        m_buttonMenu->addChild(m_fields->pickerToggle);
+        m_buttonMenu->addChild(m_fields->pickerToggleLabel);
+
+        m_fields->pickerToggle->toggle(Mod::get()->getSettingValue<bool>("enable-picker"));
+
+        m_fields->picker->setVisible(on);
+        m_fields->pickerToggle->setVisible(on);
+        m_fields->pickerToggle->setEnabled(on);
+        m_fields->pickerToggleLabel->setVisible(on);
 
         return true;
 	}
+
+    void onPickerToggle(CCObject* target) {
+        auto toggler = static_cast<CCMenuItemToggler*>(target);
+        Mod::get()->setSettingValue<bool>("enable-picker", !toggler->isToggled());
+        this->updatePickerPositions();
+    }
+
+    void updatePickerPositions() {
+        bool enable = Mod::get()->getSettingValue<bool>("enable-picker");
+
+        auto winSize = CCDirector::sharedDirector()->getWinSize();
+        auto center = winSize / 2.0f;
+        
+        if (enable) {
+            // i could not find a way to prevent the vanilla picker to pick up touch events
+            m_colorPicker->setPosition(ccp(100000, 0));
+            m_fields->picker->setPosition(center + ccp(0.f, 36.f));
+        } else {
+            m_fields->picker->setPosition(ccp(100000, 0));
+            m_colorPicker->setPosition(center + ccp(0.f, 36.f));
+        }
+    }
 
     void onDefault(CCObject* sender) {
         ColorSelectPopup::onDefault(sender);
@@ -348,7 +389,14 @@ class $modify(MyColorSelectPopup, ColorSelectPopup) {
 
     void onToggleHSVMode(CCObject* sender) {
         ColorSelectPopup::onToggleHSVMode(sender);
-        m_fields->picker->setVisible(static_cast<CCMenuItemToggler*>(sender)->isOn());
+
+        bool on = static_cast<CCMenuItemToggler*>(sender)->isOn();
+
+        m_fields->picker->setVisible(on);
+        m_fields->pickerToggle->setVisible(on);
+        m_fields->pickerToggle->setEnabled(on);
+        m_fields->pickerToggleLabel->setVisible(on);
+
     }
 };
 
