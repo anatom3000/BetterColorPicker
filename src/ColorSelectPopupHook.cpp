@@ -30,13 +30,17 @@ class $modify(MyColorSelectPopup, ColorSelectPopup) {
         m_fields->pickerToggleLabel->setAnchorPoint(ccp(0.0, 0.5));
         m_fields->pickerToggleLabel->setPosition(130.25, 144);
 
-        bool on = m_colorPicker->isVisible();
+        //auto palette = CCSprite::createWithSpriteFrameName("GJ_paintBtn_001.png");
+        //palette->setPosition(ccp(145.0, 144.0));
+        //palette->setScale(0.6);
 
         m_buttonMenu->addChild(m_fields->pickerToggle);
         m_buttonMenu->addChild(m_fields->pickerToggleLabel);
+        //m_buttonMenu->addChild(palette);
 
         m_fields->pickerToggle->toggle(Mod::get()->getSettingValue<bool>("enable-picker"));
 
+        bool on = m_colorPicker->isVisible();
         m_fields->picker->setVisible(on);
         m_fields->pickerToggle->setVisible(on);
         m_fields->pickerToggle->setEnabled(on);

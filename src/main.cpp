@@ -103,15 +103,23 @@ public:
     }
 
     void setRgbValue(ccColor3B color, bool call) {
-        auto hsv = CCControlUtils::HSVfromRGB({
-            .r = color.r / 255.0f,
-            .g = color.g / 255.0f,
-            .b = color.b / 255.0f
-        });
+        if (color.r == color.g == color.b == 0) {
+            // hsvFromRgb does weird stuff when converting pure black
+            m_hue = 0.0;
+            m_saturation = 0.0;
+            m_value = 0.0;
+        } else {
+            auto hsv = CCControlUtils::HSVfromRGB({
+                .r = color.r / 255.0f,
+                .g = color.g / 255.0f,
+                .b = color.b / 255.0f
+            });
 
-        m_hue = hsv.h / 360.0f;
-        m_saturation = hsv.s;
-        m_value = hsv.v;
+            m_hue = hsv.h / 360.0f;
+            m_saturation = hsv.s;
+            m_value = hsv.v;
+        }
+
 
         double radius = m_radius * (1.0-OUTLINE_WIDTH+TRIANGLE_SIZE) / 2.0;
         double angle = (m_hue - 0.5) * 2 * PI;
