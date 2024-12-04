@@ -1,3 +1,6 @@
+# 1.1.1
+- Fix picker always using black when opening popup
+
 # 1.1.0
 - Added ability to toggle between modded and vanilla picker
 - Fix bug where color would be slightly changed when opening the popup

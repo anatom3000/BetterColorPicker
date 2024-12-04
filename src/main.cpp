@@ -103,7 +103,7 @@ public:
     }
 
     void setRgbValue(ccColor3B color, bool call) {
-        if (color.r == color.g == color.b == 0) {
+        if (color.r == 0 && color.g == 0 && color.b == 0) {
             // hsvFromRgb does weird stuff when converting pure black
             m_hue = 0.0;
             m_saturation = 0.0;
