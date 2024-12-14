@@ -1,3 +1,6 @@
+# 1.1.2
+- Use member to access vanilla color picker in SetupPulsePopup
+
 # 1.1.1
 - Fix picker always using black when opening popup
 
