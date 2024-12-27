@@ -3,7 +3,6 @@ using namespace geode::prelude;
 
 #include <Geode/modify/GameManager.hpp>
 
-#include "CCSpriteBatchNode.h"
 #include "ShaderCache.h"
 
 const double PI = 3.1415926535897932384626433;
