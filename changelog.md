@@ -1,3 +1,6 @@
+# 1.1.3
+- Update logo
+
 # 1.1.2
 - Use member to access vanilla color picker in SetupPulsePopup
 - Fix crashes
