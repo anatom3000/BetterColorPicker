@@ -1,5 +1,5 @@
-# 1.1.3
-- Update logo
+# 1.2.0
+- Add antialiasing
 
 # 1.1.2
 - Use member to access vanilla color picker in SetupPulsePopup
