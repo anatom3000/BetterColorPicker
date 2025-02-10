@@ -1,3 +1,7 @@
+# 1.2.1
+- Port to MacOS (thanks hiimjasmine00!)
+- Remove antialiasing on Android as it crashed the game on startup
+
 # 1.2.0
 - Add antialiasing
 

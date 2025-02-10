@@ -265,13 +265,11 @@ void disableTouch(CCControlColourPicker* target) {
 }
 
 void loadPickerShader() {
-    log::info("loading picker shader");
 #ifdef GEODE_IS_ANDROID
     auto shaderPath = Mod::get()->getResourcesDir() / "picker_android.fsh";
 #else
     std::filesystem::path shaderPath = Mod::get()->getResourcesDir() / "picker_main.fsh";
 #endif
-    log::info("{}", shaderPath);
     // why is c++ so ass
     // i want my std::fs::read_to_string
     std::ifstream file(shaderPath);
@@ -280,9 +278,6 @@ void loadPickerShader() {
     file.close();
 
     auto shaderCode = buffer.str();
-
-    log::info("{}", shaderCode);
-
 	ShaderCache::get()->createShader("colorPicker", shaderCode);
 }
 
