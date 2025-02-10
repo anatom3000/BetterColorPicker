@@ -87,7 +87,7 @@ class $modify(MySetupPulsePopup, SetupPulsePopup) {
         auto center = winSize / 2.0f;
         
         if (enable) {
-            // i could not find a way to prevent the vanilla picker to pick up touch events
+            // i could not find a way to prevent the vanilla picker from picking up touch events
             m_colorPicker->setPosition(ccp(100000, 0));
             m_fields->picker->setPosition(center + ccp(-8, 52));
         } else {

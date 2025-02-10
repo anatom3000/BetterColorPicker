@@ -20,6 +20,10 @@
         "sprites": [
             "resources/frame.png",
             "resources/nipple.png"
+        ],
+        "files": [
+            "resources/picker_main.fsh",
+            "resources/picker_android.fsh"
         ]
     },
     "settings": {

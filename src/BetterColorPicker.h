@@ -3,7 +3,6 @@ using ColorChangedCallback = std::function<void(cocos2d::ccColor3B)>;
 class BetterColorPicker : public cocos2d::extension::CCControl {
 public:
     float m_radius;
-    cocos2d::CCPoint m_center;
     bool m_touching;
     bool m_touchedHue;
     
@@ -26,10 +25,11 @@ public:
 
     static BetterColorPicker* create(ColorChangedCallback callback);
 
-    bool init(ColorChangedCallback callback);
-    void updateValues(bool call);
     cocos2d::ccColor3B getRgbValue();
     void setRgbValue(cocos2d::ccColor3B color, bool call);
+
+    bool init(ColorChangedCallback callback);
+    void updateValues(bool call);
     double widthAt(double y);
     bool touchesHueWheel(cocos2d::CCPoint position);
     std::tuple<double, double, double> barycentricCoords(cocos2d::CCPoint pos);
