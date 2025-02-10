@@ -1,4 +1,7 @@
+#include "BetterColorPicker.h"
 #include <Geode/modify/ColorSelectPopup.hpp>
+
+using namespace geode::prelude;
 
 class $modify(MyColorSelectPopup, ColorSelectPopup) {
     struct Fields {
@@ -17,7 +20,7 @@ class $modify(MyColorSelectPopup, ColorSelectPopup) {
         m_fields->picker = BetterColorPicker::create([this](ccColor3B color) {
             m_colorPicker->setColorValue(color);
         });
-        m_fields->picker->setRgbValue(static_cast<WhyTheFuckIsGetColorValueInlinedOnAndroid*>(m_colorPicker)->getTheFuckingColor(), false);
+        m_fields->picker->setRgbValue(m_colorPicker->m_rgb, false);
 
         this->addChild(m_fields->picker);
         this->updatePickerPositions();
@@ -93,12 +96,12 @@ class $modify(MyColorSelectPopup, ColorSelectPopup) {
 
     void onBetterDefault(CCObject* sender) {
         ColorSelectPopup::onDefault(sender);
-        m_fields->picker->setRgbValue(static_cast<WhyTheFuckIsGetColorValueInlinedOnAndroid*>(m_colorPicker)->getTheFuckingColor(), false);
+        m_fields->picker->setRgbValue(m_colorPicker->m_rgb, false);
     }
 
     void onBetterPaste(CCObject* sender) {
         ColorSelectPopup::onPaste(sender);
-        m_fields->picker->setRgbValue(static_cast<WhyTheFuckIsGetColorValueInlinedOnAndroid*>(m_colorPicker)->getTheFuckingColor(), false);
+        m_fields->picker->setRgbValue(m_colorPicker->m_rgb, false);
     }
 
     void textChanged(CCTextInputNode* input) {
@@ -107,7 +110,7 @@ class $modify(MyColorSelectPopup, ColorSelectPopup) {
         if (!m_fields->picker || m_fields->picker->m_touching) return;
         if (input->getTag() != 11) return;
 
-        m_fields->picker->setRgbValue(static_cast<WhyTheFuckIsGetColorValueInlinedOnAndroid*>(m_colorPicker)->getTheFuckingColor(), false);
+        m_fields->picker->setRgbValue(m_colorPicker->m_rgb, false);
     }
 
     void onToggleHSVMode(CCObject* sender) {

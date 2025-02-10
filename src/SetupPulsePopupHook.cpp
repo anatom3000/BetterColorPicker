@@ -1,4 +1,7 @@
+#include "BetterColorPicker.h"
 #include <Geode/modify/SetupPulsePopup.hpp>
+
+using namespace geode::prelude;
 
 class $modify(MySetupPulsePopup, SetupPulsePopup) {
     struct Fields {
@@ -20,7 +23,7 @@ class $modify(MySetupPulsePopup, SetupPulsePopup) {
             m_colorPicker->setColorValue(color);
         });
 
-        m_fields->picker->setRgbValue(static_cast<WhyTheFuckIsGetColorValueInlinedOnAndroid*>(m_colorPicker)->getTheFuckingColor(), false);
+        m_fields->picker->setRgbValue(m_colorPicker->m_rgb, false);
         m_fields->picker->setScale(0.8f);
 
         this->addChild(m_fields->picker);
@@ -96,7 +99,7 @@ class $modify(MySetupPulsePopup, SetupPulsePopup) {
     void onBetterPaste(CCObject* sender) {
         SetupPulsePopup::onPaste(sender);
 
-        m_fields->picker->setRgbValue(static_cast<WhyTheFuckIsGetColorValueInlinedOnAndroid*>(m_colorPicker)->getTheFuckingColor(), false);
+        m_fields->picker->setRgbValue(m_colorPicker->m_rgb, false);
     }
 
     void textChanged(CCTextInputNode* input) {
@@ -105,6 +108,6 @@ class $modify(MySetupPulsePopup, SetupPulsePopup) {
         if (!m_fields->picker || m_fields->picker->m_touching) return;
         if (input->getTag() != 14) return;
 
-        m_fields->picker->setRgbValue(static_cast<WhyTheFuckIsGetColorValueInlinedOnAndroid*>(m_colorPicker)->getTheFuckingColor(), false);
+        m_fields->picker->setRgbValue(m_colorPicker->m_rgb, false);
     }
 };
